@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css"><link rel="stylesheet" href="css/L.Control.Locate.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css"><link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <style>
+        #map {
+            width: 1951px;
+            height: 1486px;
+        }
+        </style>
+        <title>Event Check-In</title>
+    </head>
+    <body>
+        <div id="map" style="width: 1000px; height: 600px;">
+        </div>
+        <div><p id="eventDetails"></p></div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Locate.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="data/EventParameters_1.js"></script>
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:true, maxZoom:21, minZoom:20
+        }).fitBounds([[43.400315236765906,-80.51559682212567],[43.402548826810246,-80.51155933254616]]);
+
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+
+        function setBounds() {
+            map.setMaxBounds(map.getBounds());
+        }
+        var layer_OSMStandard_0 = L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            opacity: 1.0,
+            attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors, CC-BY-SA</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_OSMStandard_0;
+        map.addLayer(layer_OSMStandard_0);
+
+        function pop_EventParameters_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['id'] !== null ? Autolinker.link(feature.properties['id'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_EventParameters_1_0() {
+            return {
+                pane: 'pane_EventParameters_1',
+                opacity: 1,
+                color: 'rgba(23,118,23,1.0)',
+                dashArray: '10,5',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 3.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(183,72,75,0.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_EventParameters_1');
+        map.getPane('pane_EventParameters_1').style.zIndex = 401;
+        map.getPane('pane_EventParameters_1').style['mix-blend-mode'] = 'normal';
+
+        var layer_EventParameters_1 = new L.geoJson(json_EventParameters_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_EventParameters_1',
+            layerName: 'layer_EventParameters_1',
+            pane: 'pane_EventParameters_1',
+            //onEachFeature: pop_EventParameters_1,
+            style: style_EventParameters_1_0,
+        });
+
+        bounds_group.addLayer(layer_EventParameters_1);
+
+        map.addLayer(layer_EventParameters_1);
+            var title = new L.Control();
+            title.onAdd = function (map) {
+                this._div = L.DomUtil.create('div', 'info');
+                this.update();
+                return this._div;
+            };
+            title.update = function () {
+                this._div.innerHTML = '<h2>Event Check-In</h2>';
+            };
+            title.addTo(map);
+            var abstract = new L.Control({'position':'topleft'});
+            abstract.onAdd = function (map) {
+                this._div = L.DomUtil.create('div',
+                'leaflet-control leaflet-bar abstract');
+                this._div.id = 'abstract'
+
+                    abstract.show();
+                    return this._div;
+                };
+                abstract.show = function () {
+                    this._div.classList.remove("abstract");
+                    this._div.classList.add("abstractUncollapsed");
+                    this._div.innerHTML = 'Please enable location access to see where you are in the event.';
+            };
+            abstract.addTo(map);
+        setBounds();
+
+        //document.onclick = function(){
+          map.on('click', function(event){
+            var lat_long = map.mouseEventToLatLng(event.originalEvent);
+            var lat = lat_long.lat;
+            var long = lat_long.lng;
+            if (d3.geoContains(json_EventParameters_1, [long, lat])) {
+              // person is inside the geofence
+              // update a page element
+              document.getElementById("eventDetails").innerHTML = "Event starts at 8am and ends at 12pm."
+
+            } else {
+              // person is outside the geofence
+              // update page element
+              document.getElementById("eventDetails").innerHTML = "You're outside the event boundaries! Lat: "+ lat +" , long: " + long
+
+              // give the user a notification that they left the boundaries
+              alert("You've left the boundaries of the event.");
+            };
+        })
+      //};
+        </script>
+
+    </body>
+</html>
